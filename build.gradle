@@ -7,7 +7,6 @@ buildscript {
 	}
 	dependencies {
 		classpath (group: 'org.springframework.boot', name: 'spring-boot-gradle-plugin', version: springBootVersion)
-		classpath (group: 'br.com.caelum.vraptor', name: 'vraptor-panettone', version: '4.0.0-RC8')
 	}
 }
 
@@ -21,11 +20,18 @@ version = '0.0.1'
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
+configurations {
+	jamon
+}
+configurations.compile.extendsFrom configurations.jamon
+
 repositories {
 	mavenCentral()
 }
 
 dependencies {
+	jamon (group: 'org.jamon', name: 'jamon', version: '2.2.2')
+
 	compile (group: 'org.springframework.boot', name: 'spring-boot-starter-web')
 
 	providedRuntime (group: 'org.springframework.boot', name: 'spring-boot-starter-tomcat')
@@ -33,17 +39,26 @@ dependencies {
 	testCompile (group: 'org.springframework.boot', name: 'spring-boot-starter-test')
 }
 
-class PanettoneCompileTask extends DefaultTask {
+class JamonCompileTask extends JavaExec {
 	@InputDirectory File source
 	@OutputDirectory File output
-	@TaskAction def compile() {
-		def compiler = new br.com.caelum.vraptor.panettone.Compiler(source, output, [], new br.com.caelum.vraptor.panettone.mini.MiniListener())
-		compiler.compileAll();
+	@Input String templatePackage
+	Task configure(Closure closure) {
+		super.configure(closure)
+		classpath project.configurations.jamon
+		main 'org.jamon.TemplateProcessor'
+		args "--srcDir=${source.path}", "--destDir=${output.path}", '--directories', "/${templatePackage.replace('.', '/')}"
 	}
 }
-task generateTemplates(type: PanettoneCompileTask) {
+task generateTemplates(type: JamonCompileTask) {
 	source file('src/main/views')
 	output file('build/view-classes')
+	templatePackage 'io.pivotal.cake'
+}
+
+// for some reason, bootRun can't find a main if run after generateTemplates
+run {
+	main 'io.pivotal.cake.Application'
 }
 
 sourceSets {

@@ -1,0 +1,23 @@
+<%import>
+  java.util.List;
+</%import>
+<%args>
+  List<String> treats;
+</%args>
+<!DOCTYPE html>
+<html>
+<head>
+<title>Welcome</title>
+</head>
+<body>
+
+<p>You may now have:</p>
+
+<ul>
+	<%for String treat : treats %>
+		<li><% treat %></li>
+	</%for>
+</ul>
+
+</body>
+</html>
