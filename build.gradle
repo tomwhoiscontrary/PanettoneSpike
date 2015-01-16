@@ -33,14 +33,27 @@ dependencies {
 	testCompile (group: 'org.springframework.boot', name: 'spring-boot-starter-test')
 }
 
+class PanettoneCompileTask extends DefaultTask {
+	@InputDirectory File source
+	@OutputDirectory File output
+	@TaskAction def compile() {
+		def compiler = new br.com.caelum.vraptor.panettone.Compiler(source, output, [], new br.com.caelum.vraptor.panettone.mini.MiniListener())
+		compiler.compileAll();
+	}
+}
+task generateTemplates(type: PanettoneCompileTask) {
+	source file('src/main/views')
+	output file('build/view-classes')
+}
+
 sourceSets {
 	main {
 		java {
-			srcDir 'build/view-classes'
+			srcDir generateTemplates.output
 		}
 	}
 }
-compileJava.dependsOn 'generateTemplates'
+compileJava.dependsOn generateTemplates
 
 eclipse {
 	classpath {
@@ -48,13 +61,6 @@ eclipse {
 		containers 'org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.8'
 		defaultOutputDir = file('.eclipse')
 	}
-}
-
-task generateTemplates << {
-	def sourceDir = file('src/main/views')
-	def outputDir = file('build/view-classes')
-	def compiler = new br.com.caelum.vraptor.panettone.Compiler(sourceDir, outputDir, [], new br.com.caelum.vraptor.panettone.mini.MiniListener())
-	compiler.compileAll();
 }
 
 task cfPush(type: Exec) {
